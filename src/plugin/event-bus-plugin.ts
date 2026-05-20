@@ -1,10 +1,10 @@
 import { plugin, Plugin } from './plugin';
 
 interface IEventHandler {
-  (...args: unknown[]): void;
+  (...args: any[]): void;
 }
 
-type Observer = [event: string, handler: IEventHandler, context: unknown, once?: boolean];
+type Observer = [event: string, handler: IEventHandler, context?: unknown, once?: boolean];
 
 class EventChannel {
   private _observers: Observer[];
