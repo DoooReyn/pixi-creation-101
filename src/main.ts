@@ -1,13 +1,13 @@
 import { Assets, Sprite } from 'pixi.js';
 
-import { Game } from './game';
-import { DevtoolsPlugin } from './plugin/devtools-plugin';
-import { EventBusPlugin } from './plugin/event-bus-plugin';
-import { GuiPlugin } from './plugin/gui-plugin';
-import { RenderLoopPlugin } from './plugin/render-loop';
-import { RendererPlugin } from './plugin/renderer-plugin';
-import { ResizePlugin, ResizeStrategy } from './plugin/resize-plugin';
-import { VisibilityPlugin } from './plugin/visibility-plugin';
+import { Game } from './engine/game';
+import { DevtoolsPlugin } from './engine/plugin/devtools-plugin';
+import { EventBusPlugin } from './engine/plugin/event-bus-plugin';
+import { GuiPlugin } from './engine/plugin/gui-plugin';
+import { RenderLoopPlugin } from './engine/plugin/render-loop';
+import { RendererPlugin } from './engine/plugin/renderer-plugin';
+import { ResizePlugin, ResizeStrategy } from './engine/plugin/resize-plugin';
+import { VisibilityPlugin } from './engine/plugin/visibility-plugin';
 
 (async () => {
   Game.Regsiter(RendererPlugin, { background: '#0e7be0' });
