@@ -21,6 +21,10 @@ class RendererPlugin extends Plugin<RendererOptions> {
     this.renderer.render({ container: this.stage });
   }
 
+  public get screen() {
+    return this.renderer.screen;
+  }
+
   protected async doInit(options: Partial<RendererOptions>): Promise<void> {
     const opt = {
       element: 'pixi-container',
