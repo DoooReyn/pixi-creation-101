@@ -1,6 +1,7 @@
 import { EventPair, IEventPair } from '../foundation/event-pair';
 import { Game } from '../game';
 import { Logger } from '../logger';
+import { EventBusPlugin } from './event-bus-plugin';
 import { plugin, Plugin } from './plugin';
 import { RendererPlugin } from './renderer-plugin';
 
@@ -23,6 +24,10 @@ interface ResizeOptions {
 class ResizePlugin extends Plugin<ResizeOptions> {
   declare static readonly Trait: string;
 
+  public static readonly EventType = {
+    Resize: 'resize',
+  };
+
   private _options: ResizeOptions;
   private _resizeId: number;
   private _eventPair: IEventPair;
@@ -31,7 +36,7 @@ class ResizePlugin extends Plugin<ResizeOptions> {
     super();
     this._options = null;
     this._resizeId = null;
-    this._eventPair = EventPair('resize', this._queueResize, this);
+    this._eventPair = EventPair(ResizePlugin.EventType.Resize, this._queueResize, this);
   }
 
   public resize() {
@@ -55,23 +60,21 @@ class ResizePlugin extends Plugin<ResizeOptions> {
       cy = clientHeight;
     }
 
-    const ox = designWidth / cw;
-    const oy = designHeight / cy;
-    const scaleX = cw < designWidth ? ox : 1;
-    const scaleY = cy < designHeight ? oy : 1;
+    const ox = cw / designWidth;
+    const oy = cy / designHeight;
     let scale = { x: 1, y: 1 };
 
     switch (resizeStrategy) {
       case ResizeStrategy.FitWith:
-        scale.x = scaleX;
-        scale.y = scaleX;
+        scale.x = ox;
+        scale.y = ox;
         break;
       case ResizeStrategy.FitHeight:
-        scale.x = scaleY;
-        scale.y = scaleY;
+        scale.x = oy;
+        scale.y = oy;
         break;
       case ResizeStrategy.FitAuto:
-        const autoScale = scaleX > scaleY ? scaleX : scaleY;
+        const autoScale = ox > oy ? oy : ox;
         scale.x = autoScale;
         scale.y = autoScale;
         break;
@@ -88,6 +91,7 @@ class ResizePlugin extends Plugin<ResizeOptions> {
     plugin.render();
 
     window.scrollTo(0, 0);
+    Game.Resolve(EventBusPlugin).sys.emit(ResizePlugin.EventType.Resize, { width, height });
     Logger.Sys.I(`scale(${scale.x.toFixed(2)},${scale.y.toFixed(2)}) canvas(${cw},${cy}) size(${width},${height})`);
   }
 
