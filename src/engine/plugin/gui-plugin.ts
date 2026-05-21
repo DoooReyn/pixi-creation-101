@@ -1,4 +1,3 @@
-import { mask } from 'motion/react-client';
 import { Assets, Container, Sprite, Texture, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 
 import { VB } from '../../business/view-registry';
@@ -25,6 +24,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   private _registry: Map<number, ViewManifest>;
   private _mask: Sprite;
   private _maskRef: number;
+  private _maskStack: Map<number, View>;
   public stage: Container;
 
   public constructor() {
@@ -33,6 +33,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._views = new Map();
     this._registry = new Map();
     this._maskRef = 0;
+    this._maskStack = new Map();
   }
 
   public register(vid: number, manifest: ViewManifest) {
@@ -76,14 +77,13 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
       await Assets.loadBundle(name);
     }
 
-    if (mask) {
-      this._presentMask(container);
-    }
-
     const view = new ctor(manifest);
     const key = multi ? `${label}_${view.vvid}` : label;
     this._views.set(key, view);
     view.label = label;
+    if (mask) {
+      this._presentMask(container, view);
+    }
     container.addChild(view);
     await view.prepare(...args);
   }
@@ -110,12 +110,11 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     }
 
     await view.reset();
+    if (mask) {
+      this._dismissMask(view);
+    }
     view.destroy();
     this._views.delete(key);
-
-    if (mask) {
-      this._dismissMask();
-    }
   }
 
   protected async doInit(options: Partial<GuiPluginOptions>): Promise<void> {
@@ -150,19 +149,23 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     eventBus.sys.remove({ event: ResizePlugin.EventType.Resize, handler: this._resize, context: this });
   }
 
-  private _presentMask(parent: Container) {
+  private _presentMask(parent: Container, view: View) {
     this._maskRef++;
-    if (!this._mask.visible) {
-      this._mask.visible = true;
-    }
+    this._mask.visible = true;
+    this._maskStack.set(view.vvid, view);
     parent.addChild(this._mask);
   }
 
-  private _dismissMask() {
+  private _dismissMask(view: View) {
     this._maskRef = Math.max(0, --this._maskRef);
+    this._maskStack.delete(view.vvid);
     if (this._maskRef === 0) {
       this._mask.visible = false;
       this.stage.addChildAt(this._mask, 0);
+    } else {
+      const next = Array.from(this._maskStack.entries()).pop()[1];
+      const index = Math.max(0, next.parent.getChildIndex(next) - 1);
+      next.parent.addChildAt(this._mask, index);
     }
   }
 
