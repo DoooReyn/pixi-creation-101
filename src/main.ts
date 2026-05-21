@@ -16,7 +16,7 @@ import { VisibilityPlugin } from './engine/plugin/visibility-plugin';
   Game.Regsiter(VisibilityPlugin);
   Game.Regsiter(ResizePlugin, { designWidth: 640, designHeight: 1136, resizeStrategy: ResizeStrategy.FitAuto });
   Game.Regsiter(RenderLoopPlugin, { maxFPS: 60, minFPS: 24 });
-  Game.Regsiter(GuiPlugin, { layers: ['screen', 'window', 'popup', 'alert'] });
+  Game.Regsiter(GuiPlugin, { layers: ['screen', 'window', 'popup', 'alert', 'message', 'notification'] });
 
   // 应用初始化
   await Game.Init();
@@ -28,5 +28,5 @@ import { VisibilityPlugin } from './engine/plugin/visibility-plugin';
   }
 
   // 打开 MainScreen
-  await gui.open(VID.MainScreen, { msg: 'This is a message from outer space' });
+  await gui.open(VID.Main, { msg: 'This is a message from outer space' });
 })();

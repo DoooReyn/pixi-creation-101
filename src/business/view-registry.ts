@@ -3,19 +3,22 @@ import { AssetsBundle } from 'pixi.js';
 import { ViewManifest } from '../engine/gui/view';
 import { PausePopup } from './pause-popup';
 import { MainScreen } from './screen-main';
+import { SettingsPopup } from './settings-popup';
 
 enum VID {
-  MainScreen,
-  PausePopup,
+  Main,
+  GamePause,
+  Settings,
 }
 
 const VMM: { [vid: number]: ViewManifest } = {
-  [VID.MainScreen]: { label: 'main-screen', layer: 'screen', ctor: MainScreen },
-  [VID.PausePopup]: { label: 'pause-popup', layer: 'popup', ctor: PausePopup, mask: true },
+  [VID.Main]: { label: 'main', layer: 'screen', ctor: MainScreen },
+  [VID.GamePause]: { label: 'game-pause', layer: 'popup', ctor: PausePopup, mask: true },
+  [VID.Settings]: { label: 'settings', layer: 'popup', ctor: SettingsPopup, mask: true },
 } as const;
 
 const VB: { [vid: number]: AssetsBundle } = {
-  [VID.MainScreen]: {
+  [VID.Main]: {
     name: 'main-screen',
     assets: [
       {
