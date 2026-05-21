@@ -60,8 +60,8 @@ class ResizePlugin extends Plugin<ResizeOptions> {
       cy = clientHeight;
     }
 
-    const ox = cw / designWidth;
-    const oy = cy / designHeight;
+    const ox = designWidth / cw;
+    const oy = designHeight / cy;
     let scale = { x: 1, y: 1 };
 
     switch (resizeStrategy) {
