@@ -19,7 +19,7 @@ interface GuiPluginOptions {
 class GuiPlugin extends Plugin<GuiPluginOptions> {
   declare public static readonly Trait: string;
 
-  private _layers: Map<string, Sprite>;
+  private _layers: Map<string, Container>;
   private _views: Map<string, View>;
   private _registry: Map<number, ViewManifest>;
   private _mask: Sprite;
@@ -138,8 +138,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     mask.alpha = 0.25;
     mask.anchor = 0.5;
     mask.visible = false;
-    mask.interactive = false;
-    mask.interactiveChildren = false;
+    mask.interactive = true;
+
     this._mask = mask;
     stage.addChildAt(mask, 0);
 
@@ -158,13 +158,6 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._mask.visible = true;
     this._maskStack.set(view.vvid, view);
     parent.addChild(this._mask);
-    if (parent === this.stage) {
-      const cx = this._size.width / 2;
-      const cy = this._size.height / 2;
-      this._mask.position.set(cx, cy);
-    } else {
-      this._mask.position.set(0, 0);
-    }
   }
 
   private _dismissMask(view: View) {
@@ -181,9 +174,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   }
 
   private _createLayer(name: string, stage: Container) {
-    const layer = new Sprite();
+    const layer = new Container();
     layer.label = name;
-    layer.anchor = 0.5;
     this._layers.set(name, layer);
     stage.addChild(layer);
     return layer;
@@ -199,9 +191,6 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._mask.position.set(cx, cy);
     this._mask.setSize(size);
 
-    for (const [, layer] of this._layers) {
-      layer.position.set(cx, cy);
-    }
     for (const [, view] of this._views) {
       view.resize?.(size);
     }
