@@ -15,6 +15,15 @@ interface GuiPluginOptions {
   bundles: { [vid: number]: AssetsBundle };
 }
 
+enum Layer {
+  Screen = 'screen',
+  Window = 'window',
+  Popup = 'popup',
+  Alert = 'alert',
+  Message = 'message',
+  Notification = 'notification',
+}
+
 @plugin('gui')
 class GuiPlugin extends Plugin<GuiPluginOptions> {
   declare public static readonly Trait: string;
@@ -85,15 +94,11 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     const key = multi ? `${label}_${view.vvid}` : label;
     this._views.set(key, view);
     view.label = label;
-    if (this.isMaskLayer(layer)) {
+    if (this._hasMask(layer)) {
       this._presentMask(container, view);
     }
     container.addChild(view);
     await view.prepare(...args);
-  }
-
-  public isMaskLayer(layer: string) {
-    return layer === 'popup' || layer === 'alert';
   }
 
   public async close(vid: number, vvid?: number) {
@@ -119,7 +124,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
 
     await view.reset();
 
-    if (this.isMaskLayer(layer)) {
+    if (this._hasMask(layer)) {
       this._dismissMask(view);
     }
     view.destroy();
@@ -157,7 +162,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     stage.addChildAt(mask, 0);
 
     // layers
-    ['screen', 'window', 'popup', 'alert', 'message', 'notification'].forEach((v) => {
+    [Layer.Screen, Layer.Window, Layer.Popup, Layer.Alert, Layer.Message, Layer.Notification].forEach((v) => {
       this._createLayer(v, stage);
     });
 
@@ -178,6 +183,10 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   protected doDestroy(): void {
     this._switchers.forEach((swt) => swt.disable());
     this._switchers.length = 0;
+  }
+
+  private _hasMask(layer: string) {
+    return layer === Layer.Popup || layer === Layer.Alert;
   }
 
   private _presentMask(parent: Container, view: View) {
