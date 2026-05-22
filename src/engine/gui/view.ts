@@ -10,7 +10,6 @@ interface ViewManifest {
   layer: string;
   ctor: ViewConstructor;
   multi?: boolean;
-  mask?: boolean;
 }
 
 interface ViewConstructor {

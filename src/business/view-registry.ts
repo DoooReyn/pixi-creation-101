@@ -13,8 +13,8 @@ enum VID {
 
 const VMM: { [vid: number]: ViewManifest } = {
   [VID.Main]: { label: 'main', layer: 'screen', ctor: MainScreen },
-  [VID.GamePause]: { label: 'game-pause', layer: 'popup', ctor: PausePopup, mask: true },
-  [VID.Settings]: { label: 'settings', layer: 'popup', ctor: SettingsPopup, mask: true },
+  [VID.GamePause]: { label: 'game-pause', layer: 'popup', ctor: PausePopup },
+  [VID.Settings]: { label: 'settings', layer: 'popup', ctor: SettingsPopup },
 } as const;
 
 const VB: { [vid: number]: AssetsBundle } = {

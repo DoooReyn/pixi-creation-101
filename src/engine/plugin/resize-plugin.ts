@@ -1,7 +1,6 @@
-import { EventPair, IEventPair } from '../foundation/event-pair';
 import { Game } from '../game';
 import { Logger } from '../logger';
-import { EventBusPlugin } from './event-bus-plugin';
+import { EventBusPlugin, ISwitcher } from './event-bus-plugin';
 import { plugin, Plugin } from './plugin';
 import { RendererPlugin } from './renderer-plugin';
 
@@ -30,13 +29,13 @@ class ResizePlugin extends Plugin<ResizeOptions> {
 
   private _options: ResizeOptions;
   private _resizeId: number;
-  private _eventPair: IEventPair;
+  private _resize: ISwitcher;
 
   public constructor() {
     super();
     this._options = null;
     this._resizeId = null;
-    this._eventPair = EventPair(ResizePlugin.EventType.Resize, this._queueResize, this);
+    this._resize = EventBusPlugin.Pairs(ResizePlugin.EventType.Resize, this._queueResize, this);
   }
 
   public resize() {
@@ -91,7 +90,7 @@ class ResizePlugin extends Plugin<ResizeOptions> {
     plugin.render();
 
     window.scrollTo(0, 0);
-    Game.Resolve(EventBusPlugin).sys.emit(ResizePlugin.EventType.Resize, { width, height });
+    Game.Resolve(EventBusPlugin).gui.emit(ResizePlugin.EventType.Resize, { width, height });
     Logger.Sys.I(`scale(${scale.x.toFixed(2)},${scale.y.toFixed(2)}) canvas(${cw},${cy}) size(${width},${height})`);
   }
 
@@ -122,14 +121,14 @@ class ResizePlugin extends Plugin<ResizeOptions> {
       ...(options ?? {}),
     };
 
-    this._eventPair.add();
+    this._resize.enable();
     this._queueResize();
   }
 
   protected doDestroy(): void {
     this._cancelResize();
-    this._eventPair.remove();
-    this._eventPair = null;
+    this._resize.disable();
+    this._resize = null;
   }
 }
 

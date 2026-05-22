@@ -1,7 +1,6 @@
-import { EventPair, IEventPair } from '../foundation/event-pair';
 import { Game } from '../game';
 import { Logger } from '../logger';
-import { EventBusPlugin } from './event-bus-plugin';
+import { EventBusPlugin, ISwitcher } from './event-bus-plugin';
 import { plugin, Plugin } from './plugin';
 
 @plugin('visibility')
@@ -11,13 +10,17 @@ class VisibilityPlugin extends Plugin {
     VisibilityChange: 'visibilitychange',
   };
 
-  private _eventPair: IEventPair;
+  private _visibilitySwt: ISwitcher;
   private _time: number;
 
   public constructor() {
     super();
     this._time = 0;
-    this._eventPair = EventPair(VisibilityPlugin.EventType.VisibilityChange, this._onVisibilityChanged, this);
+    this._visibilitySwt = EventBusPlugin.Pairs(
+      VisibilityPlugin.EventType.VisibilityChange,
+      this._onVisibilityChanged,
+      this
+    );
   }
 
   private _onVisibilityChanged() {
@@ -35,12 +38,12 @@ class VisibilityPlugin extends Plugin {
   }
 
   protected async doInit(): Promise<void> {
-    this._eventPair.add();
+    this._visibilitySwt.enable();
   }
 
   protected doDestroy(): void {
-    this._eventPair.remove();
-    this._eventPair = null;
+    this._visibilitySwt.disable();
+    this._visibilitySwt = null;
   }
 }
 

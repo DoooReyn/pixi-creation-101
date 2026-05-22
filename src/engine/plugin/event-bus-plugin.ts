@@ -1,10 +1,15 @@
 import { plugin, Plugin } from './plugin';
 
+interface ISwitcher {
+  enable(): void;
+  disable(): void;
+}
+
 interface IEventHandler {
   (...args: any[]): void;
 }
 
-type Observer = [event: string, handler: IEventHandler, context?: unknown, once?: boolean];
+type Observer = [event: string, handle: IEventHandler, context?: unknown, once?: boolean];
 
 class EventChannel {
   private _observers: Observer[];
@@ -17,9 +22,9 @@ class EventChannel {
     this._observers.push(observer);
   }
 
-  public remove(condition: Partial<{ event: string; handler: IEventHandler; context: unknown }>) {
-    const { event, handler, context } = condition;
-    const matches = [event !== undefined, handler !== undefined, context !== undefined];
+  public remove(condition: Partial<{ event: string; handle: IEventHandler; context: unknown }>) {
+    const { event, handle, context } = condition;
+    const matches = [event !== undefined, handle !== undefined, context !== undefined];
     const count = matches.filter((v) => v == true).length;
     if (count === 0) return;
 
@@ -28,7 +33,7 @@ class EventChannel {
       let match = 0;
       const [e, h, c] = v;
       if (matches[0] && e === event) match++;
-      if (matches[1] && h === handler) match++;
+      if (matches[1] && h === handle) match++;
       if (matches[2] && c === context) match++;
       if (match === count) indexes.push(i);
     });
@@ -67,6 +72,11 @@ class EventChannel {
 class EventBusPlugin extends Plugin {
   declare public static readonly Trait: string;
 
+  public static readonly Channel = {
+    Sys: 'sys',
+    Gui: 'gui',
+  };
+
   private _channels: Map<string, EventChannel>;
 
   public constructor() {
@@ -76,7 +86,35 @@ class EventBusPlugin extends Plugin {
   }
 
   public get sys() {
-    return this.acquire('sys');
+    return this.acquire(EventBusPlugin.Channel.Sys);
+  }
+
+  public get gui() {
+    return this.acquire(EventBusPlugin.Channel.Gui);
+  }
+
+  public pairs(channel: string, event: string, handle: (...args: any[]) => void, context: unknown): ISwitcher {
+    const bus = this.acquire(channel);
+    function enable() {
+      disable();
+      bus.add(event, handle, context);
+    }
+    function disable() {
+      bus.remove({ event, handle, context });
+    }
+    return { enable, disable };
+  }
+
+  public static Pairs(event: string, handle: (...args: any[]) => void, context: unknown): ISwitcher {
+    const handler = handle.bind(context);
+    function enable() {
+      disable();
+      globalThis.addEventListener(event, handler);
+    }
+    function disable() {
+      globalThis.removeEventListener(event, handler);
+    }
+    return { enable, disable };
   }
 
   public acquire(channel: string) {
@@ -94,7 +132,7 @@ class EventBusPlugin extends Plugin {
     this.acquire(channel).add(...observer);
   }
 
-  public remove(channel: string, condition?: Partial<{ event: string; handler: IEventHandler; context: unknown }>) {
+  public remove(channel: string, condition?: Partial<{ event: string; handle: IEventHandler; context: unknown }>) {
     if (this.has(channel)) {
       const ec = this.acquire(channel);
       if (condition) {
@@ -125,4 +163,4 @@ class EventBusPlugin extends Plugin {
   }
 }
 
-export { EventBusPlugin };
+export { type ISwitcher, EventBusPlugin };

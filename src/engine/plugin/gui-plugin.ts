@@ -1,12 +1,11 @@
-import { Assets, Container, Size, Sprite, Texture, Ticker, UPDATE_PRIORITY } from 'pixi.js';
+import { Assets, AssetsBundle, Container, Size, Sprite, Texture, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 
-import { VB } from '../../business/view-registry';
 import { KeyList } from '../foundation/key-list';
 import { Game } from '../game';
 import { View, ViewManifest } from '../gui/view';
 import { ISize } from '../interface/math';
 import { Logger } from '../logger';
-import { EventBusPlugin } from './event-bus-plugin';
+import { EventBusPlugin, ISwitcher } from './event-bus-plugin';
 import { plugin, Plugin } from './plugin';
 import { RenderLoopPlugin } from './render-loop';
 import { RendererPlugin } from './renderer-plugin';
@@ -14,6 +13,7 @@ import { ResizePlugin } from './resize-plugin';
 
 interface GuiPluginOptions {
   layers: string[];
+  bundles: { [vid: number]: AssetsBundle };
 }
 
 @plugin('gui')
@@ -27,6 +27,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   private _stack: KeyList<View>;
   public stage: Container;
   private _size: Size;
+  private _bundles: { [vid: number]: AssetsBundle };
+  private _switchers: ISwitcher[];
 
   public constructor() {
     super();
@@ -35,6 +37,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._registry = new Map();
     this._stack = new KeyList();
     this._size = { width: 0, height: 0 };
+    this._bundles = null;
+    this._switchers = [];
   }
 
   public register(vid: number, manifest: ViewManifest) {
@@ -59,7 +63,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
       return;
     }
 
-    const { layer, label, ctor, multi, mask } = manifest;
+    const { layer, label, ctor, multi } = manifest;
 
     if (!multi && this._views.has(label)) {
       Logger.Sys.W(`[${vid}] ${label} 视图已打开`);
@@ -72,8 +76,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
       return;
     }
 
-    if (VB[vid] !== undefined) {
-      const { name, assets } = VB[vid];
+    if (this._bundles[vid]) {
+      const { name, assets } = this._bundles[vid];
       Assets.addBundle(name, assets);
       await Assets.loadBundle(name);
     }
@@ -82,11 +86,15 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     const key = multi ? `${label}_${view.vvid}` : label;
     this._views.set(key, view);
     view.label = label;
-    if (mask) {
+    if (this.isMaskLayer(layer)) {
       this._presentMask(container, view);
     }
     container.addChild(view);
     await view.prepare(...args);
+  }
+
+  public isMaskLayer(layer: string) {
+    return layer === 'popup' || layer === 'alert';
   }
 
   public async close(vid: number, vvid?: number) {
@@ -96,7 +104,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
       return;
     }
 
-    const { label, multi, mask } = manifest;
+    const { layer, label, multi } = manifest;
     let key: string = null;
     if (vvid || (multi && vvid)) {
       key = multi ? `${label}_${vvid}` : label;
@@ -111,7 +119,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     }
 
     await view.reset();
-    if (mask) {
+
+    if (this.isMaskLayer(layer)) {
       this._dismissMask(view);
     }
     view.destroy();
@@ -126,18 +135,18 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   }
 
   protected async doInit(options: Partial<GuiPluginOptions>): Promise<void> {
+    this._bundles = options.bundles ?? {};
+
     const eventBus = Game.Resolve(EventBusPlugin);
     const loop = Game.Resolve(RenderLoopPlugin);
     const { stage } = Game.Resolve(RendererPlugin);
-    eventBus.sys.add(ResizePlugin.EventType.Resize, this._resize, this);
-    (options.layers ?? ['screen', 'popup']).forEach((v) => {
-      this._createLayer(v, stage);
-    });
 
+    // stage
     this.stage = stage;
     this._size.width = stage.width;
     this._size.height = stage.height;
 
+    // mask
     const mask = new Sprite(Texture.WHITE);
     mask.label = 'mask';
     mask.tint = 0x0;
@@ -145,18 +154,31 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     mask.anchor = 0.5;
     mask.visible = false;
     mask.interactive = true;
-
     this._mask = mask;
     stage.addChildAt(mask, 0);
 
-    loop.ticker.add(this._update, this, UPDATE_PRIORITY.LOW);
+    // layers
+    ['screen', 'window', 'popup', 'alert', 'message', 'notification'].forEach((v) => {
+      this._createLayer(v, stage);
+    });
+
+    // event
+    const resize = eventBus.pairs(EventBusPlugin.Channel.Gui, ResizePlugin.EventType.Resize, this._resize, this);
+
+    // update
+    const update = {
+      enable: () => loop.ticker.add(this._update, this, UPDATE_PRIORITY.LOW),
+      disable: () => loop.ticker.remove(this._update, this),
+    };
+
+    // switchers
+    this._switchers.push(resize, update);
+    this._switchers.forEach((swt) => swt.enable());
   }
 
   protected doDestroy(): void {
-    const eventBus = Game.Resolve(EventBusPlugin);
-    const loop = Game.Resolve(RenderLoopPlugin);
-    loop.ticker.remove(this._update, this);
-    eventBus.sys.remove({ event: ResizePlugin.EventType.Resize, handler: this._resize, context: this });
+    this._switchers.forEach((swt) => swt.disable());
+    this._switchers.length = 0;
   }
 
   private _presentMask(parent: Container, view: View) {
