@@ -76,6 +76,10 @@ class Logger {
     return this.Acquire('sys');
   }
 
+  public static get Gui() {
+    return this.Acquire('gui');
+  }
+
   public static Acquire(tag: string) {
     if (!this._items.has(tag)) {
       this._items.set(tag, {
