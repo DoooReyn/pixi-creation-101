@@ -1,6 +1,7 @@
 import { Assets, Container, Size, Sprite, Texture, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 
 import { VB } from '../../business/view-registry';
+import { KeyList } from '../foundation/key-list';
 import { Game } from '../game';
 import { View, ViewManifest } from '../gui/view';
 import { ISize } from '../interface/math';
@@ -23,8 +24,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   private _views: Map<string, View>;
   private _registry: Map<number, ViewManifest>;
   private _mask: Sprite;
-  private _maskRef: number;
-  private _maskStack: Map<number, View>;
+  private _stack: KeyList<View>;
   public stage: Container;
   private _size: Size;
 
@@ -33,8 +33,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._layers = new Map();
     this._views = new Map();
     this._registry = new Map();
-    this._maskStack = new Map();
-    this._maskRef = 0;
+    this._stack = new KeyList();
     this._size = { width: 0, height: 0 };
   }
 
@@ -79,7 +78,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
       await Assets.loadBundle(name);
     }
 
-    const view = new ctor(manifest);
+    const view = new ctor(vid, manifest);
     const key = multi ? `${label}_${view.vvid}` : label;
     this._views.set(key, view);
     view.label = label;
@@ -119,6 +118,13 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._views.delete(key);
   }
 
+  public async closePopup() {
+    if (this._stack.size > 0) {
+      const view = this._stack.last();
+      await this.close(view.vid, view.vvid);
+    }
+  }
+
   protected async doInit(options: Partial<GuiPluginOptions>): Promise<void> {
     const eventBus = Game.Resolve(EventBusPlugin);
     const loop = Game.Resolve(RenderLoopPlugin);
@@ -154,20 +160,18 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   }
 
   private _presentMask(parent: Container, view: View) {
-    this._maskRef++;
     this._mask.visible = true;
-    this._maskStack.set(view.vvid, view);
+    this._stack.set(String(view.vvid), view);
     parent.addChild(this._mask);
   }
 
   private _dismissMask(view: View) {
-    this._maskRef = Math.max(0, --this._maskRef);
-    this._maskStack.delete(view.vvid);
-    if (this._maskRef === 0) {
+    this._stack.delete(String(view.vvid));
+    if (this._stack.size === 0) {
       this._mask.visible = false;
       this.stage.addChildAt(this._mask, 0);
     } else {
-      const next = Array.from(this._maskStack.entries()).pop()[1];
+      const next = this._stack.last();
       const index = Math.max(0, next.parent.getChildIndex(next) - 1);
       next.parent.addChildAt(this._mask, index);
     }
