@@ -13,8 +13,8 @@ class ViewPopup extends View {
   protected panel: Panel;
   protected center: Point;
 
-  public constructor(manifest: ViewManifest) {
-    super(manifest);
+  public constructor(vid: number, manifest: ViewManifest) {
+    super(vid, manifest);
     this.label = this.manifest.label;
     this.center = new Point(this.screen.width / 2, this.screen.height / 2);
   }

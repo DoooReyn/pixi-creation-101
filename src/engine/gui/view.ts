@@ -14,19 +14,21 @@ interface ViewManifest {
 }
 
 interface ViewConstructor {
-  new (manifest: ViewManifest): View;
+  new (vid: number, manifest: ViewManifest): View;
 }
 
 class View extends Container {
   public static readonly Generator = generator();
+  public readonly vid: number;
   public readonly vvid: number;
   public readonly manifest: ViewManifest;
   private _paused: boolean;
   protected args: unknown[];
 
-  public constructor(manifest: ViewManifest) {
+  public constructor(vid: number, manifest: ViewManifest) {
     super();
     this._paused = false;
+    this.vid = vid;
     this.vvid = View.Generator();
     this.manifest = manifest;
   }
