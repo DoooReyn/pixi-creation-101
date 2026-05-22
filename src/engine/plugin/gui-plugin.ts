@@ -28,12 +28,12 @@ enum Layer {
 class GuiPlugin extends Plugin<GuiPluginOptions> {
   declare public static readonly Trait: string;
 
+  public stage: Container;
   private _layers: Map<string, Container>;
   private _views: Map<string, View>;
   private _registry: Map<number, ViewManifest>;
   private _mask: Sprite;
   private _stack: KeyList<View>;
-  public stage: Container;
   private _size: Size;
   private _bundles: { [vid: number]: AssetsBundle };
   private _switchers: ISwitcher[];
