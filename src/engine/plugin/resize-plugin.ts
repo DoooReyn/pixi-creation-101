@@ -74,7 +74,7 @@ class ResizePlugin extends Plugin<ResizeOptions> {
         scale.y = oy;
         break;
       case ResizeStrategy.FitAuto:
-        const autoScale = ox > oy ? oy : ox;
+        const autoScale = ox > oy ? ox : oy;
         scale.x = autoScale;
         scale.y = autoScale;
         break;
