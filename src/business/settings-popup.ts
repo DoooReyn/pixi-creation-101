@@ -1,30 +1,16 @@
 import { Sprite, Texture } from 'pixi.js';
 
-import { View } from '../engine/gui/view';
-import { ISize } from '../engine/interface/math';
+import { ViewPopup } from '../engine/gui/popup';
 
-class SettingsPopup extends View {
-  private _body: Sprite;
+class SettingsPopup extends ViewPopup {
   protected doPrepare(): void {
-    const body = new Sprite(Texture.WHITE);
-    body.label = 'body';
-    body.anchor = 0.5;
-    body.tint = 0xffffff;
-    body.setSize(100, 100);
-    this._body = body;
+    super.doPrepare();
 
-    this.addChild(body);
-  }
-
-  protected doReset(): void {}
-
-  protected async doShow(): Promise<void> {}
-
-  protected async doHide(): Promise<void> {}
-
-  public resize(_size: ISize): void {
-    super.resize(_size);
-    this._body.position.set(_size.width / 2, _size.height / 2);
+    const rect = new Sprite(Texture.WHITE);
+    rect.setSize(100, 100);
+    rect.anchor = 0.5;
+    rect.position.set(this.panel.width / 2, this.panel.height / 2);
+    this.panel.addChild(rect);
   }
 }
 
