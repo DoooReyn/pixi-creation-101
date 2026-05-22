@@ -1,4 +1,4 @@
-import { Assets, Container, Sprite, Texture, Ticker, UPDATE_PRIORITY } from 'pixi.js';
+import { Assets, Container, Size, Sprite, Texture, Ticker, UPDATE_PRIORITY } from 'pixi.js';
 
 import { VB } from '../../business/view-registry';
 import { Game } from '../game';
@@ -19,21 +19,23 @@ interface GuiPluginOptions {
 class GuiPlugin extends Plugin<GuiPluginOptions> {
   declare public static readonly Trait: string;
 
-  private _layers: Map<string, Container>;
+  private _layers: Map<string, Sprite>;
   private _views: Map<string, View>;
   private _registry: Map<number, ViewManifest>;
   private _mask: Sprite;
   private _maskRef: number;
   private _maskStack: Map<number, View>;
   public stage: Container;
+  private _size: Size;
 
   public constructor() {
     super();
     this._layers = new Map();
     this._views = new Map();
     this._registry = new Map();
-    this._maskRef = 0;
     this._maskStack = new Map();
+    this._maskRef = 0;
+    this._size = { width: 0, height: 0 };
   }
 
   public register(vid: number, manifest: ViewManifest) {
@@ -127,6 +129,8 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     });
 
     this.stage = stage;
+    this._size.width = stage.width;
+    this._size.height = stage.height;
 
     const mask = new Sprite(Texture.WHITE);
     mask.label = 'mask';
@@ -154,6 +158,13 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
     this._mask.visible = true;
     this._maskStack.set(view.vvid, view);
     parent.addChild(this._mask);
+    if (parent === this.stage) {
+      const cx = this._size.width / 2;
+      const cy = this._size.height / 2;
+      this._mask.position.set(cx, cy);
+    } else {
+      this._mask.position.set(0, 0);
+    }
   }
 
   private _dismissMask(view: View) {
@@ -170,16 +181,27 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   }
 
   private _createLayer(name: string, stage: Container) {
-    const layer = new Container();
+    const layer = new Sprite();
     layer.label = name;
+    layer.anchor = 0.5;
     this._layers.set(name, layer);
     stage.addChild(layer);
     return layer;
   }
 
   private _resize(size: ISize) {
+    const cx = size.width / 2,
+      cy = size.height / 2;
+
+    this._size.width = size.width;
+    this._size.height = size.height;
+
+    this._mask.position.set(cx, cy);
     this._mask.setSize(size);
-    this._mask.position.set(size.width / 2, size.height / 2);
+
+    for (const [, layer] of this._layers) {
+      layer.position.set(cx, cy);
+    }
     for (const [, view] of this._views) {
       view.resize?.(size);
     }
