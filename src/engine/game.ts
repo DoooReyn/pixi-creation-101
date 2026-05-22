@@ -19,7 +19,7 @@ class Game {
     const inst = new cls();
     plugin[2] = inst;
     await inst.init(opt ?? {});
-    Logger.Sys.I(`注册插件 ${trait}`);
+    Logger.Sys.I(`注册插件: ${trait}`);
   }
 
   // #################### public ####################

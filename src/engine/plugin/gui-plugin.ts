@@ -51,36 +51,38 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
 
   public register(vid: number, manifest: ViewManifest) {
     if (this._registry.has(vid)) {
-      Logger.Sys.W(`${vid} 视图已存在`);
+      Logger.Sys.W(`视图已存在: ${vid}`);
       return;
     }
     this._registry.set(vid, manifest);
-    Logger.Sys.I(`${vid} 视图已注册`);
+    Logger.Sys.I(`注册视图: ${manifest.label} <${vid}>`);
   }
 
   public unregister(vid: number) {
-    if (this._registry.delete(vid)) {
-      Logger.Sys.I(`${vid} 视图已注册`);
+    const manifest = this._registry.get(vid);
+    if (manifest) {
+      this._registry.delete(vid);
+      Logger.Sys.I(`注销视图: ${manifest.label} <${vid}>`);
     }
   }
 
   public async open(vid: number, ...args: unknown[]) {
     const manifest = this._registry.get(vid);
     if (!manifest) {
-      Logger.Sys.E(`${vid} 视图未注册`);
+      Logger.Sys.E(`视图未注册: ${vid}`);
       return;
     }
 
     const { layer, label, ctor, multi } = manifest;
 
     if (!multi && this._views.has(label)) {
-      Logger.Sys.W(`[${vid}] ${label} 视图已打开`);
+      Logger.Sys.W(`视图已打开: ${label} <${vid}>`);
       return;
     }
 
     const container = this._layers.get(layer);
     if (!container) {
-      Logger.Sys.W(`${layer} 层级不存在`);
+      Logger.Sys.W(`层级不存在: ${layer}`);
       return;
     }
 
@@ -104,7 +106,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
   public async close(vid: number, vvid?: number) {
     const manifest = this._registry.get(vid);
     if (!manifest) {
-      Logger.Sys.E(`${vid} 视图未注册`);
+      Logger.Sys.E(`视图未注册: ${vid}`);
       return;
     }
 
@@ -118,7 +120,7 @@ class GuiPlugin extends Plugin<GuiPluginOptions> {
 
     const view = this._views.get(key);
     if (!view) {
-      Logger.Sys.E(`${vid} 视图未打开`);
+      Logger.Sys.E(`视图未打开: ${vid}`);
       return;
     }
 

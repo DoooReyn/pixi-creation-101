@@ -14,7 +14,7 @@ class MainScreen extends View {
     background.label = 'background';
     background.eventMode = 'static';
     background.onclick = () => {
-      Logger.Gui.D('点击到背景:', this.manifest.label);
+      Logger.Gui.D(`点击到背景: ${this.manifest.label}`);
     };
 
     const bunny = Sprite.from('bunny');
