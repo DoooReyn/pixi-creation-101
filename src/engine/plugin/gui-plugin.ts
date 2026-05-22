@@ -12,7 +12,6 @@ import { RendererPlugin } from './renderer-plugin';
 import { ResizePlugin } from './resize-plugin';
 
 interface GuiPluginOptions {
-  layers: string[];
   bundles: { [vid: number]: AssetsBundle };
 }
 

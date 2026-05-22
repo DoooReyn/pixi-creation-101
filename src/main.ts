@@ -16,7 +16,7 @@ import { VisibilityPlugin } from './engine/plugin/visibility-plugin';
   Game.Regsiter(VisibilityPlugin);
   Game.Regsiter(ResizePlugin, { designWidth: 640, designHeight: 1136, resizeStrategy: ResizeStrategy.FitAuto });
   Game.Regsiter(RenderLoopPlugin, { maxFPS: 60, minFPS: 24 });
-  Game.Regsiter(GuiPlugin, { layers: ['screen', 'window', 'popup', 'alert', 'message', 'notification'], bundles: VB });
+  Game.Regsiter(GuiPlugin, { bundles: VB });
 
   // 应用初始化
   await Game.Init();
